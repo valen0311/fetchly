@@ -132,6 +132,14 @@ try {
 }
 ```
 
+## Patrones de diseño y Programación Orientada a Aspectos
+
+Fetchly aplica los siguientes patrones para mantener el código modular y desacoplado:
+
+- **Facade**: `FetchlyClient` expone una interfaz simple (`get`, `post`, `put`, `patch`, `delete`) que oculta la complejidad interna de construir URLs, cabeceras, reintentos, timeouts y manejo de errores sobre `fetch`.
+- **Observer**: `FetchlyEventEmitter` permite suscribirse (`on`/`off`) a eventos del ciclo de vida de una petición (`onSuccess`, `onError`, `onRetry`, `onTimeout`) sin acoplar al cliente HTTP con la lógica de quien consume esos eventos.
+- **Programación Orientada a Aspectos (AOP)**: las preocupaciones transversales (logging, medición de tiempo y validación de configuración) están separadas en funciones independientes (`loggingAspect`, `timingAspect`, `validationAspect`) que envuelven la ejecución de la petición por composición, en lugar de mezclarse con la lógica de negocio de `executeRequest`.
+
 ## Tecnologías
 
 - TypeScript
