@@ -17,13 +17,13 @@ export async function loggingAspect<T>(
   url: string,
   fn: RequestFunction<T>
 ): Promise<T> {
-  console.log(`[Fetchly] ➡️ ${method} ${url} - ${new Date().toISOString()}`);
+  console.log(`[Fetchly] ${method} ${url} - ${new Date().toISOString()}`);
   try {
     const result = await fn();
-    console.log(`[Fetchly] ✅ ${method} ${url} - Petición exitosa`);
+    console.log(`[Fetchly] ${method} ${url} - Petición exitosa`);
     return result;
   } catch (error) {
-    console.error(`[Fetchly] ❌ ${method} ${url} - Error:`, error);
+    console.error(`[Fetchly] ${method} ${url} - Error:`, error);
     throw error;
   }
 }
@@ -73,11 +73,11 @@ export async function timingAspect<T>(
   try {
     const result = await fn();
     const duration = (performance.now() - start).toFixed(2);
-    console.log(`[Fetchly] ⏱️ ${method} ${url} - ${duration}ms`);
+    console.log(`[Fetchly] ${method} ${url} - ${duration}ms`);
     return result;
   } catch (error) {
     const duration = (performance.now() - start).toFixed(2);
-    console.error(`[Fetchly] ⏱️ ${method} ${url} - Falló en ${duration}ms`);
+    console.error(`[Fetchly] ${method} ${url} - Falló en ${duration}ms`);
     throw error;
   }
 }
