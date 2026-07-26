@@ -1,4 +1,4 @@
-# Fetchly 🚀
+# Proyecto: SmartFetch 🚀
 
 Fetchly es una librería TypeScript que actúa como wrapper avanzado sobre la API nativa `fetch`, proporcionando una interfaz limpia, resiliente y altamente configurable para realizar peticiones HTTP.
 
@@ -15,7 +15,7 @@ Fetchly es una librería TypeScript que actúa como wrapper avanzado sobre la AP
 ## Instalación
 
 ```bash
-npm install fetchly
+npm install git+https://github.com/valen0311/fetchly.git
 ```
 
 ## Integración en un proyecto
@@ -119,15 +119,18 @@ client.events.on('onTimeout', (data) => {
 ## Manejo de errores
 
 ```typescript
+import { FetchlyError } from 'fetchly';
+
 try {
   const response = await client.get<Usuario>('/usuarios/1');
 } catch (error) {
-  if (error.isTimeout) {
+  const fetchlyError = error as FetchlyError;
+  if (fetchlyError.isTimeout) {
     console.error('La petición tardó demasiado');
-  } else if (error.isNetworkError) {
+  } else if (fetchlyError.isNetworkError) {
     console.error('Error de red');
   } else {
-    console.error(`Error del servidor: ${error.status}`);
+    console.error(`Error del servidor: ${fetchlyError.status}`);
   }
 }
 ```
