@@ -18,8 +18,11 @@ export class FetchlyClient {
     this.config = {
       timeout: 5000,
       retries: 0,
-      headers: { 'Content-Type': 'application/json' },
       ...config,
+      headers: {
+        'Content-Type': 'application/json',
+        ...config.headers,
+      },
     };
     this.events = new FetchlyEventEmitter();
   }
@@ -69,6 +72,24 @@ export class FetchlyClient {
   }
 
   /**
+   * Parsea el cuerpo de la respuesta de forma segura.
+   * Devuelve undefined si no hay contenido (por ejemplo, 204 No Content)
+   * o si el cuerpo no es JSON válido, en lugar de lanzar una excepción.
+   * @param response - Respuesta de fetch
+   */
+  private async parseResponseBody<T>(response: Response): Promise<T> {
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
+    try {
+      return (await response.json()) as T;
+    } catch {
+      return undefined as T;
+    }
+  }
+
+  /**
    * Ejecuta la petición HTTP con reintentos y manejo de timeout
    * @param method - Método HTTP
    * @param url - URL completa de la petición
@@ -83,6 +104,14 @@ export class FetchlyClient {
     const timeout = options?.timeout ?? this.config.timeout ?? 5000;
     const retries = options?.retries ?? this.config.retries ?? 0;
     const start = performance.now();
+
+    if (retries < 0) {
+      throw {
+        message: 'El número de reintentos no puede ser negativo',
+        isTimeout: false,
+        isNetworkError: false,
+      };
+    }
 
     let lastError: FetchlyError | null = null;
 
@@ -103,13 +132,11 @@ export class FetchlyClient {
         const response = await fetch(url, {
           method,
           headers,
-          body: options?.body ? JSON.stringify(options.body) : undefined,
+          body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
           signal: controller.signal,
         });
 
         clearTimeout(timeoutId);
-
-        const data = (await response.json()) as T;
 
         if (!response.ok && response.status >= 500) {
           throw {
@@ -120,14 +147,25 @@ export class FetchlyClient {
           };
         }
 
+        const data = await this.parseResponseBody<T>(response);
+
         const duration = performance.now() - start;
 
-        this.events.emit('onSuccess', {
-          method,
-          url,
-          status: response.status,
-          duration,
-        });
+        if (response.ok) {
+          this.events.emit('onSuccess', {
+            method,
+            url,
+            status: response.status,
+            duration,
+          });
+        } else {
+          this.events.emit('onError', {
+            method,
+            url,
+            message: `Error del cliente: ${response.status}`,
+            status: response.status,
+          });
+        }
 
         return {
           data,

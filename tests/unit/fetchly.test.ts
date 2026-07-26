@@ -3,6 +3,11 @@ import { FetchlyEventEmitter } from '../../src/events/index';
 
 global.fetch = jest.fn();
 
+/**
+ * Suite de tests unitarios para FetchlyClient.
+ * Cubre configuración, los 5 métodos HTTP, manejo de errores,
+ * reintentos, eventos, validación y los fixes de robustez.
+ */
 describe('FetchlyClient', () => {
   let client: FetchlyClient;
 
@@ -208,6 +213,87 @@ describe('FetchlyClient', () => {
       const clientInvalid = new FetchlyClient({ retries: -1 });
       await expect(clientInvalid.get('https://api.ejemplo.com/usuarios')).rejects.toMatchObject({
         message: 'El número de reintentos no puede ser negativo',
+      });
+    });
+  });
+
+  describe('Fixes de robustez', () => {
+    it('debe enviar un body falsy (false) en vez de omitirlo', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: async () => ({}),
+      });
+
+      await client.post('/toggle', false);
+
+      const fetchOptions = (global.fetch as jest.Mock).mock.calls[0][1];
+      expect(fetchOptions.body).toBe(JSON.stringify(false));
+    });
+
+    it('debe manejar una respuesta 204 sin body sin lanzar error', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+        headers: new Headers(),
+        json: async () => {
+          throw new Error('Unexpected end of JSON input');
+        },
+      });
+
+      const response = await client.delete('/usuarios/1');
+      expect(response.ok).toBe(true);
+      expect(response.data).toBeUndefined();
+    });
+
+    it('debe emitir onError (no onSuccess) y resolver con ok:false ante un 404', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        headers: new Headers(),
+        json: async () => ({}),
+      });
+
+      const onSuccess = jest.fn();
+      const onError = jest.fn();
+      client.events.on('onSuccess', onSuccess);
+      client.events.on('onError', onError);
+
+      const response = await client.get('/usuarios/999');
+
+      expect(response.ok).toBe(false);
+      expect(response.status).toBe(404);
+      expect(onSuccess).not.toHaveBeenCalled();
+      expect(onError).toHaveBeenCalledTimes(1);
+    });
+
+    it('debe rechazar con un error controlado si retries es negativo por request (no por config)', async () => {
+      await expect(client.get('/usuarios', { retries: -1 })).rejects.toMatchObject({
+        message: 'El número de reintentos no puede ser negativo',
+      });
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('debe mantener el Content-Type por defecto aunque se pasen headers custom en el constructor', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: async () => ({}),
+      });
+
+      const clientCustomHeaders = new FetchlyClient({
+        baseUrl: 'https://api.ejemplo.com',
+        headers: { Authorization: 'Bearer token' },
+      });
+
+      await clientCustomHeaders.get('/usuarios');
+
+      const fetchOptions = (global.fetch as jest.Mock).mock.calls[0][1];
+      expect(fetchOptions.headers).toEqual({
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer token',
       });
     });
   });
