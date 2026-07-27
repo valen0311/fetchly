@@ -105,6 +105,14 @@ export class FetchlyClient {
     const retries = options?.retries ?? this.config.retries ?? 0;
     const start = performance.now();
 
+    if (timeout <= 0) {
+      throw {
+        message: 'El timeout debe ser mayor a 0',
+        isTimeout: false,
+        isNetworkError: false,
+      };
+    }
+
     if (retries < 0) {
       throw {
         message: 'El número de reintentos no puede ser negativo',

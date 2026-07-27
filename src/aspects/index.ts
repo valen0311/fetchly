@@ -20,7 +20,7 @@ export async function loggingAspect<T>(
   console.log(`[Fetchly] ${method} ${url} - ${new Date().toISOString()}`);
   try {
     const result = await fn();
-    console.log(`[Fetchly] ${method} ${url} - Petición exitosa`);
+    console.log(`[Fetchly] ${method} ${url} - Petición completada`);
     return result;
   } catch (error) {
     console.error(`[Fetchly] ${method} ${url} - Error:`, error);
