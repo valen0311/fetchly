@@ -1,6 +1,6 @@
 {
   "name": "fetchly",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Advanced fetch wrapper library for TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
