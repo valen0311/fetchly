@@ -275,6 +275,13 @@ describe('FetchlyClient', () => {
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
+    it('debe rechazar con un error controlado si timeout es menor o igual a 0 por request (no por config)', async () => {
+      await expect(client.get('/usuarios', { timeout: 0 })).rejects.toMatchObject({
+        message: 'El timeout debe ser mayor a 0',
+      });
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
     it('debe mantener el Content-Type por defecto aunque se pasen headers custom en el constructor', async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
