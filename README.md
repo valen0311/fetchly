@@ -149,6 +149,3 @@ Fetchly aplica los siguientes patrones para mantener el código modular y desaco
 - Jest
 - GitFlow
 
-## Licencia
-
-MIT
